@@ -1,16 +1,27 @@
 const net = require("net");
 
+const OK_200 = "HTTP/1.1 200 OK\r\n";
+const NOT_FOUND = "HTTP/1.1 404 Not Found\r\n\r\n";
+
+const ok = () => OK_200 + "\r\n";
+
+const plain = content => {
+  let result = OK_200;
+  result += "Content-Type: text/plain\r\n";
+  result += `Content-Length: ${content.length}\r\n\r\n${content}`;
+
+  return result;
+}
+
 // Uncomment this to pass the first stage
 const server = net.createServer((socket) => {
 
   socket.on('data', (data) => {
-    console.log(`Receive data ${data.toString()}`)
-
-    //console.log(data.toString().split("\r\n"))
+    console.log("Receive data");
+    console.log(data.toString());
 
     const [reqLine, ...headers] = data.toString().split("\r\n");
     
-    //let reqLine = data.toString().split("\r\n")[0]
     console.log(`request line: ${reqLine}`)
     console.log(`headers: ${headers}`)
 
@@ -22,20 +33,17 @@ const server = net.createServer((socket) => {
     console.log('endpoints:', endpoints);
 
     if (reqTarget === '/') {
-      socket.write("HTTP/1.1 200 OK\r\n\r\n")
+      socket.write(ok());
     } else if (endpoints[1] === "echo") {
-      const echoStr = endpoints[2];
-      const result = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${echoStr.length}\r\n\r\n${echoStr}`;
-      console.log(result);
-      socket.write(result);
+      const message = endpoints[2];
+      socket.write(plain(message));
     } else if (endpoints[1] === "user-agent") {
-      const userAgentHeader = headers.find( header => header.startsWith("User-Agent:"));
-      const userAgent = userAgentHeader.split(":")[1].trim();
-      const result = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${userAgent.length}\r\n\r\n${userAgent}`;
-      
-      socket.write(result);
+      const userAgent =
+        headers.find( header => header.startsWith("User-Agent:"))
+               .split(":")[1].trim();
+      socket.write(plain(userAgent));
     } else {
-      socket.write("HTTP/1.1 404 Not Found\r\n\r\n")
+      socket.write(NOT_FOUND);
     }
   });
 
