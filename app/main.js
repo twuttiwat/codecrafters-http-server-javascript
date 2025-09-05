@@ -12,10 +12,20 @@ const server = net.createServer((socket) => {
     let reqTarget = reqLine.split(' ')[1]
     console.log(`request target: ${reqTarget}`)
 
-    if (reqTarget === '/')
+    const endpoints = reqTarget.split("/");
+    console.log('endpoints:', endpoints);
+
+    if (reqTarget === '/') {
       socket.write("HTTP/1.1 200 OK\r\n\r\n")
-    else
+    } else if (endpoints[1] === "echo") {
+      const echoStr = endpoints[2];
+      const result = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${echoStr.length}\r\n\r\n${echoStr}`;
+      console.log(result);
+      socket.write(result);
+
+    } else {
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n")
+    }
   });
 
   socket.on("close", () => {
